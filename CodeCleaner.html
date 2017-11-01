@@ -1,0 +1,75 @@
+<script>
+function getStyle(e, styleProp) {
+	return e.currentStyle
+		? e.currentStyle[styleProp]
+		: document.defaultView.getComputedStyle(e, null).getPropertyValue(styleProp);
+}
+function zeroPadding(num, length) {
+	return ('0000000000' + num).slice(-length);
+}
+function toHex(color) {
+	var rgb = color.replace("rgb(", "").replace(")", "").split(",");
+	return "#" +
+		zeroPadding(parseInt(rgb[0]).toString(16), 2) +
+		zeroPadding(parseInt(rgb[1]).toString(16), 2) +
+		zeroPadding(parseInt(rgb[2]).toString(16), 2);
+}
+function getTextNodes($element) {
+	var array = [];
+    getTextNodes2($element, array);
+    return array;
+}
+function getTextNodes2($element, array) {
+	var contents = $element.contents();
+	for (var i = 0; i < contents.length; i++) {
+		if (contents[i].nodeType == 1) {
+			getTextNodes2($(contents[i]), array);
+			if (getStyle(contents[i], "display") == "block") {
+				array.push("\n");
+			}
+		} else if (contents[i].nodeType == 3) {
+			array.push(contents[i]);
+		}
+	}
+}
+function toBold($element) {
+	return $("<b>").append($element);
+}
+function toColor($element, color) {
+	return $("<span>").css("color", color).append($element);
+}
+function convert() {
+	var textNodes = getTextNodes($("#a"));
+	var $pre = $("<pre>");
+	for (var i = 0; i < textNodes.length; i++) {
+		var textNode = textNodes[i];
+		if (textNode === "\n") {
+			var $element = $("<br>");
+			$pre.append($element);
+		} else {
+			var $node = $(document.createTextNode(textNode.data.replace("\n", " ").replace("\n", " ")));
+
+			var color = toHex(getStyle(textNode.parentNode, "color"));
+			if (color != "#000000") {
+				$node = toColor($node, color);
+			}
+
+			if (getStyle(textNode.parentNode, "font-weight") == "bold") {
+				$node = toBold($node);
+			}
+
+			$pre.append($node);
+		}
+	}
+
+	var $b = $("#b");
+	$b.empty();
+	$b.append($pre);
+	$("#c").html($b.html());
+}
+</script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<div style="width: 100%;min-height: 200px;max-height: 200px;border: solid 1px black;overflow: scroll;" id="a" contenteditable="true"></div>
+<button onclick="convert()">Convert</button>
+<div style="width: 100%;min-height: 200px;max-height: 200px;border: solid 1px black;overflow: scroll;" id="b" contenteditable="true"></div>
+<textarea style="width: 100%;min-height: 200px;" id="c"></textarea>
