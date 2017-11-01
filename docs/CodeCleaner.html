@@ -25,10 +25,21 @@ function getTextNodes2($element, array) {
 		if (contents[i].nodeType == 1) {
 			getTextNodes2($(contents[i]), array);
 			if (getStyle(contents[i], "display") == "block") {
-				array.push("\n");
+				array.push(["BR"]);
 			}
 		} else if (contents[i].nodeType == 3) {
-			array.push(contents[i]);
+			var data = contents[i].data;
+			if (i >= 1) {
+				if (contents[i - 1].nodeType == 1 && getStyle(contents[i - 1], "display") == "block") {
+					data = data.replace(/^[\n\t ]*/, "");
+				}
+			}
+			if (i < contents.length - 1) {
+				if (contents[i + 1].nodeType == 1 && getStyle(contents[i + 1], "display") == "block") {
+					data = data.replace(/[\n\t ]*$/, "");
+				}
+			}
+			array.push(["TEXT", data, contents[i].parentNode]);
 		}
 	}
 }
@@ -39,22 +50,26 @@ function toColor($element, color) {
 	return $("<span>").css("color", color).append($element);
 }
 function convert() {
-	var textNodes = getTextNodes($("#a"));
 	var $pre = $("<pre>");
+
+	var textNodes = getTextNodes($("#a"));
 	for (var i = 0; i < textNodes.length; i++) {
 		var textNode = textNodes[i];
-		if (textNode === "\n") {
+		if (textNode[0] == "BR") {
 			var $element = $("<br>");
 			$pre.append($element);
-		} else {
-			var $node = $(document.createTextNode(textNode.data.replace("\n", " ").replace("\n", " ")));
+		} else if (textNode[0] == "TEXT") {
+			var $node = $(document.createTextNode(textNode[1]
+				.replace(/[\n\t ]+/g, "\u2002")
+				.replace(/\u00A0/g, "\u2002")
+				.replace(/ /g, "\u2002")));
 
-			var color = toHex(getStyle(textNode.parentNode, "color"));
+			var color = toHex(getStyle(textNode[2], "color"));
 			if (color != "#000000") {
 				$node = toColor($node, color);
 			}
 
-			if (getStyle(textNode.parentNode, "font-weight") == "bold") {
+			if (getStyle(textNode[2], "font-weight") == "bold") {
 				$node = toBold($node);
 			}
 
